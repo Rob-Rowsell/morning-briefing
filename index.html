@@ -163,6 +163,7 @@ let _emails = [];
 let _skipped = JSON.parse(localStorage.getItem('sk')||'{}');
 let _flagged = JSON.parse(localStorage.getItem('fl')||'{}');
 let _snoozed = JSON.parse(localStorage.getItem('sn')||'{}');
+let _archivedIds = JSON.parse(localStorage.getItem('ar')||'[]');
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function showToast(msg,color){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color||'#22c55e';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
@@ -178,7 +179,7 @@ async function api(path,body){
 async function loadData(){
   document.getElementById('header-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Los_Angeles'});
   try{
-    const d=await api('/morningBriefing',{});
+    const d=await api('/morningBriefing',{excludeEmailIds:_archivedIds});
     renderScripture(d.scripture||{});
     renderGoals(d.goals||[]);
     renderCalendar(d.calendar||[]);
@@ -275,7 +276,9 @@ function doArchive(idx,btn){
   const e=_emails[idx];if(!e||!e.id){showToast('No message ID','#ff6b6b');return;}
   btn.disabled=true;btn.textContent='...';
   api('/emailActions',{action:'archive',messageId:e.id})
-  .then(r=>{if(r.error)throw new Error(r.error);document.querySelector('[data-idx="'+idx+'"].email-item').classList.add('archived');showToast('Archived ✓');})
+  .then(r=>{if(r.error)throw new Error(r.error);
+    if(e.id&&!_archivedIds.includes(e.id)){_archivedIds.push(e.id);localStorage.setItem('ar',JSON.stringify(_archivedIds));}
+    document.querySelector('[data-idx="'+idx+'"].email-item').classList.add('archived');showToast('Archived ✓');})
   .catch(err=>{btn.disabled=false;btn.textContent='📥 Archive';showToast(err.message,'#ff6b6b');});
 }
 
@@ -284,7 +287,9 @@ function doUnsub(idx,btn){
   if(!e.unsubscribeUrl){showToast('No unsubscribe link found','#f59e0b');return;}
   btn.disabled=true;btn.textContent='...';
   api('/emailActions',{action:'unsubscribe',messageId:e.id,unsubscribeUrl:e.unsubscribeUrl})
-  .then(r=>{if(r.error)throw new Error(r.error);document.querySelector('[data-idx="'+idx+'"].email-item').classList.add('archived');showToast('Unsubscribed ✓');})
+  .then(r=>{if(r.error)throw new Error(r.error);
+    if(e.id&&!_archivedIds.includes(e.id)){_archivedIds.push(e.id);localStorage.setItem('ar',JSON.stringify(_archivedIds));}
+    document.querySelector('[data-idx="'+idx+'"].email-item').classList.add('archived');showToast('Unsubscribed ✓');})
   .catch(err=>{btn.disabled=false;btn.textContent='🚫 Unsub';showToast(err.message,'#ff6b6b');});
 }
 
