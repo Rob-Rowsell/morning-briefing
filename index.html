@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rob's Morning Briefing</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f14; color: #e8e8f0; min-height: 100vh; padding-bottom: 60px; }
+.header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-bottom: 1px solid #2a2a4a; padding: 24px 20px 18px; text-align: center; position: sticky; top: 0; z-index: 100; }
+.header .greeting { font-size: 11px; color: #8888aa; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px; }
+.header h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+.header .date { font-size: 13px; color: #6666aa; }
+.container { max-width: 680px; margin: 0 auto; padding: 0 14px; }
+.section { margin-top: 20px; background: #16161f; border-radius: 16px; border: 1px solid #2a2a3a; overflow: hidden; }
+.section-header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid #2a2a3a; background: #1c1c28; }
+.section-header .icon { font-size: 18px; }
+.section-header h2 { font-size: 13px; font-weight: 700; color: #c8c8e8; text-transform: uppercase; letter-spacing: 1.5px; flex: 1; }
+.section-body { padding: 4px 0; }
+.empty { color: #444460; font-size: 14px; padding: 16px 18px; }
+.loading { color: #6666aa; font-size: 14px; padding: 16px 18px; }
+.scripture-block { margin: 14px 18px; background: linear-gradient(135deg, #1e1a3a, #1a2040); border-radius: 12px; padding: 18px; border-left: 4px solid #6c63ff; }
+.scripture-text { font-size: 16px; font-style: italic; color: #d8d8f8; line-height: 1.6; margin-bottom: 8px; }
+.scripture-ref { font-size: 12px; color: #6c63ff; font-weight: 700; }
+.goal-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #1e1e2e; cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
+.goal-item:last-child { border-bottom: none; }
+.goal-item:active { background: #1e1e2e; }
+.goal-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #444466; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.2s; }
+.goal-check.done { background: #22c55e; border-color: #22c55e; color: #fff; }
+.goal-text { font-size: 15px; color: #c8c8e0; line-height: 1.45; flex: 1; }
+.goal-text.done { text-decoration: line-through; color: #55556a; }
+.goal-add { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-top: 1px solid #1e1e2e; }
+.goal-add input { flex: 1; background: #1e1e2e; border: 1px solid #2a2a3a; border-radius: 8px; padding: 9px 12px; color: #e8e8f0; font-size: 14px; outline: none; }
+.goal-add input:focus { border-color: #6c63ff; }
+.goal-add button { background: #6c63ff; color: #fff; border: none; border-radius: 8px; padding: 9px 14px; font-size: 13px; cursor: pointer; font-weight: 600; }
+.event-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #1e1e2e; }
+.event-item:last-child { border-bottom: none; }
+.event-item.skipped .event-title { text-decoration: line-through; color: #55556a; }
+.event-item.skipped .event-time { color: #55556a; }
+.event-time { font-size: 12px; color: #6c63ff; font-weight: 700; min-width: 70px; padding-top: 2px; }
+.event-body { flex: 1; }
+.event-title { font-size: 15px; color: #c8c8e0; line-height: 1.4; }
+.event-sub { font-size: 12px; color: #666680; margin-top: 2px; }
+.event-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.btn-skip { background: #2a1a1a; color: #ff6b6b; border: 1px solid #3a2a2a; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+.btn-skip.active { background: #1a2a1a; color: #55556a; border-color: #2a2a2a; }
+.btn-join { background: #1a2a1a; color: #22c55e; border: 1px solid #2a3a2a; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-block; }
+.email-item { padding: 14px 18px; border-bottom: 1px solid #1e1e2e; transition: opacity 0.3s; }
+.email-item:last-child { border-bottom: none; }
+.email-item.flagged { border-left: 3px solid #f59e0b; }
+.email-item.snoozed { opacity: 0.4; }
+.email-item.archived { display: none; }
+.email-from { font-size: 12px; color: #8888bb; margin-bottom: 3px; font-weight: 600; }
+.email-subject { font-size: 15px; color: #c8c8e0; font-weight: 500; margin-bottom: 4px; }
+.email-preview { font-size: 13px; color: #555570; margin-bottom: 10px; line-height: 1.4; }
+.email-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn-draft { background: #1a1a3a; color: #8888ff; border: 1px solid #2a2a5a; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; font-weight: 600; }
+.btn-archive { background: #1a2a1a; color: #22c55e; border: 1px solid #2a3a2a; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+.btn-unsub { background: #2a1a2a; color: #cc88ff; border: 1px solid #3a2a3a; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+.btn-flag { background: #2a2a1a; color: #f59e0b; border: 1px solid #3a3a1a; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+.btn-snooze { background: #1a1a1a; color: #666680; border: 1px solid #2a2a2a; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; align-items: flex-end; }
+.modal-overlay.open { display: flex; }
+.modal { background: #1c1c28; border-radius: 20px 20px 0 0; padding: 24px 20px 20px; width: 100%; max-height: 80vh; overflow-y: auto; }
+.modal h3 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.modal-sub { font-size: 13px; color: #6666aa; margin-bottom: 16px; }
+.modal textarea { width: 100%; background: #0f0f14; border: 1px solid #2a2a3a; border-radius: 10px; padding: 14px; color: #e8e8f0; font-size: 14px; line-height: 1.6; min-height: 160px; outline: none; resize: vertical; font-family: inherit; }
+.modal textarea:focus { border-color: #6c63ff; }
+.modal-actions { display: flex; gap: 10px; margin-top: 14px; }
+.btn-approve { flex: 1; background: #6c63ff; color: #fff; border: none; border-radius: 10px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.btn-cancel { background: #2a2a3a; color: #8888aa; border: none; border-radius: 10px; padding: 13px 18px; font-size: 15px; cursor: pointer; }
+.modal-status { font-size: 14px; color: #6c63ff; padding: 16px 0; text-align: center; }
+.video-item { padding: 14px 18px; border-bottom: 1px solid #1e1e2e; }
+.video-item:last-child { border-bottom: none; }
+.video-channel { font-size: 11px; color: #ff5555; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.video-title a { font-size: 15px; color: #c8c8e0; text-decoration: none; }
+.news-item { padding: 14px 18px; border-bottom: 1px solid #1e1e2e; }
+.news-item:last-child { border-bottom: none; }
+.news-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.news-topic { font-size: 11px; color: #22c55e; font-weight: 700; text-transform: uppercase; }
+.news-read { font-size: 11px; color: #666680; }
+.news-title a { font-size: 15px; color: #c8c8e0; text-decoration: none; }
+.news-source { font-size: 12px; color: #555570; margin-top: 2px; }
+.refresh-btn { display: block; margin: 24px auto 0; background: #2a2a4a; color: #8888bb; border: 1px solid #3a3a5a; border-radius: 10px; padding: 11px 28px; font-size: 14px; cursor: pointer; text-align: center; width: fit-content; border: none; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #22c55e; color: #fff; padding: 10px 22px; border-radius: 20px; font-size: 14px; font-weight: 600; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- Draft Modal -->
+<div class="modal-overlay" id="draft-modal">
+  <div class="modal">
+    <h3 id="draft-title"></h3>
+    <div class="modal-sub" id="draft-sub"></div>
+    <div class="modal-status" id="draft-status">Drafting in your voice...</div>
+    <textarea id="draft-ta" style="display:none"></textarea>
+    <div class="modal-actions">
+      <button class="btn-approve" id="draft-copy" style="display:none" onclick="copyDraft()">📋 Copy to Clipboard</button>
+      <button class="btn-cancel" onclick="closeDraft()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="header">
+  <div class="greeting">GOOD MORNING, ROB</div>
+  <h1>Morning Briefing</h1>
+  <div class="date" id="header-date"></div>
+</div>
+
+<div class="container">
+  <!-- Scripture -->
+  <div class="section">
+    <div class="section-header"><span class="icon">✝️</span><h2>Scripture</h2></div>
+    <div class="section-body"><div id="scripture-body" class="loading">Loading...</div></div>
+  </div>
+
+  <!-- Goals -->
+  <div class="section">
+    <div class="section-header"><span class="icon">🎯</span><h2>This Week's Goals</h2></div>
+    <div class="section-body">
+      <div id="goals-list" class="loading">Loading...</div>
+      <div class="goal-add">
+        <input id="new-goal-input" type="text" placeholder="Add a goal..." onkeydown="if(event.key==='Enter')addGoal()"/>
+        <button id="add-goal-btn" onclick="addGoal()">+ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="section">
+    <div class="section-header"><span class="icon">📅</span><h2>Today's Calendar</h2></div>
+    <div class="section-body"><div id="calendar-list" class="loading">Loading...</div></div>
+  </div>
+
+  <!-- Emails -->
+  <div class="section">
+    <div class="section-header"><span class="icon">📬</span><h2>Priority Emails</h2></div>
+    <div class="section-body"><div id="email-list" class="loading">Loading...</div></div>
+  </div>
+
+  <!-- YouTube -->
+  <div class="section">
+    <div class="section-header"><span class="icon">▶️</span><h2>New YouTube Videos</h2></div>
+    <div class="section-body"><div id="video-list" class="loading">Loading...</div></div>
+  </div>
+
+  <!-- AI News -->
+  <div class="section">
+    <div class="section-header"><span class="icon">🤖</span><h2>AI News</h2></div>
+    <div class="section-body"><div id="news-list" class="loading">Loading...</div></div>
+  </div>
+
+  <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+</div>
+
+<script>
+const BASE = 'https://base-44-agent-569135c7.base44.app/functions';
+let _emails = [];
+let _skipped = JSON.parse(localStorage.getItem('sk')||'{}');
+let _flagged = JSON.parse(localStorage.getItem('fl')||'{}');
+let _snoozed = JSON.parse(localStorage.getItem('sn')||'{}');
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function showToast(msg,color){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color||'#22c55e';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function fmtTime(iso){try{return new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Los_Angeles'});}catch{return iso;}}
+function meetLink(loc){const m=(loc||'').match(/https?:\/\/[^\s]+(?:zoom\.us|teams\.microsoft|meet\.google)[^\s]*/i);return m?m[0]:'';}
+
+async function api(path,body){
+  const r=await fetch(BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return r.json();
+}
+
+// ---- LOAD DATA ----
+async function loadData(){
+  document.getElementById('header-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Los_Angeles'});
+  try{
+    const d=await api('/morningBriefing',{});
+    renderScripture(d.scripture||{});
+    renderGoals(d.goals||[]);
+    renderCalendar(d.calendar||[]);
+    _emails=d.emails||[];
+    renderEmails(_emails);
+    renderVideos(d.videos||[]);
+    renderNews(d.aiNews||[]);
+  }catch(e){
+    ['scripture-body','goals-list','calendar-list','email-list','video-list','news-list'].forEach(id=>{
+      document.getElementById(id).innerHTML='<div class="empty">Error loading data.</div>';
+    });
+  }
+}
+
+function renderScripture(s){
+  document.getElementById('scripture-body').innerHTML=s.verse?`<div class="scripture-block"><div class="scripture-text">"${esc(s.verse)}"</div><div class="scripture-ref">— ${esc(s.ref)}</div></div>`:'<div class="empty">No scripture today.</div>';
+}
+
+function renderGoals(goals){
+  const el=document.getElementById('goals-list');
+  if(!goals.length){el.innerHTML='<div class="empty">No goals yet. Add one below.</div>';return;}
+  el.innerHTML=goals.map(g=>`<div class="goal-item" data-id="${esc(g.id)}" data-status="${esc(g.status)}" onclick="toggleGoal(this)"><div class="goal-check${g.status==='done'?' done':''}">${g.status==='done'?'✓':''}</div><div class="goal-text${g.status==='done'?' done':''}">${esc(g.goal)}</div></div>`).join('');
+}
+
+function renderCalendar(events){
+  const el=document.getElementById('calendar-list');
+  if(!events.length){el.innerHTML='<div class="empty">No events today.</div>';return;}
+  el.innerHTML=events.map((e,i)=>{
+    const ml=meetLink(e.location||'');
+    const t=e.allDay?'All Day':fmtTime(e.start);
+    const skipped=_skipped[i]?'skipped':'';
+    return`<div class="event-item ${skipped}" data-idx="${i}"><div class="event-time">${esc(t)}</div><div class="event-body"><div class="event-title">${esc(e.title)}</div>${e.location&&!ml?`<div class="event-sub">${esc(e.location)}</div>`:''}<div class="event-actions"><button class="btn-skip${_skipped[i]?' active':''}" onclick="toggleSkip(${i},this)">${_skipped[i]?'↩ Undo':'✕ Skip'}</button>${ml?`<a class="btn-join" href="${esc(ml)}" target="_blank">🔗 Join</a>`:''}</div></div></div>`;
+  }).join('');
+}
+
+function renderEmails(emails){
+  const el=document.getElementById('email-list');
+  if(!emails.length){el.innerHTML='<div class="empty">No priority emails in the last 24 hours.</div>';return;}
+  el.innerHTML=emails.map((e,i)=>`<div class="email-item${_flagged[i]?' flagged':''}${_snoozed[i]?' snoozed':''}" data-idx="${i}"><div class="email-from">${esc(e.from)}</div><div class="email-subject">${esc(e.subject)}</div>${e.preview?`<div class="email-preview">${esc(e.preview)}</div>`:''}<div class="email-actions"><button class="btn-draft" onclick="openDraft(${i})">✍️ Draft</button><button class="btn-archive" onclick="doArchive(${i},this)">📥 Archive</button><button class="btn-unsub" onclick="doUnsub(${i},this)">🚫 Unsub</button><button class="btn-flag" onclick="toggleFlag(${i},this)">⭐ Flag</button><button class="btn-snooze" onclick="toggleSnooze(${i},this)">💤 Snooze</button></div></div>`).join('');
+}
+
+function renderVideos(videos){
+  const el=document.getElementById('video-list');
+  el.innerHTML=videos.length?videos.map(v=>`<div class="video-item"><div class="video-channel">${esc(v.channel)}</div><div class="video-title"><a href="${esc(v.link)}" target="_blank">${esc(v.title)}</a></div></div>`).join(''):'<div class="empty">No new videos in the last 24 hours.</div>';
+}
+
+function renderNews(news){
+  const el=document.getElementById('news-list');
+  el.innerHTML=news.length?news.map(n=>`<div class="news-item"><div class="news-meta"><span class="news-topic">${esc(n.topic)}</span><span class="news-read">· ${n.readMins} min read</span></div><div class="news-title"><a href="${esc(n.url)}" target="_blank">${esc(n.title)}</a></div><div class="news-source">${esc(n.source)}</div></div>`).join(''):'<div class="empty">No AI news found today.</div>';
+}
+
+// ---- GOALS ----
+function toggleGoal(el){
+  const id=el.dataset.id, cur=el.dataset.status, next=cur==='done'?'pending':'done';
+  el.dataset.status=next;
+  const check=el.querySelector('.goal-check'), text=el.querySelector('.goal-text');
+  check.className='goal-check'+(next==='done'?' done':'');check.textContent=next==='done'?'✓':'';
+  text.className='goal-text'+(next==='done'?' done':'');
+  api('/goalActions',{action:'update',id,status:next}).then(r=>{if(r.error)showToast('Save failed','#ff6b6b');else showToast(next==='done'?'Done ✓':'Reopened');}).catch(()=>showToast('Save failed','#ff6b6b'));
+}
+
+function addGoal(){
+  const input=document.getElementById('new-goal-input'), text=input.value.trim();
+  if(!text)return;
+  const btn=document.getElementById('add-goal-btn');
+  btn.disabled=true;btn.textContent='...';
+  api('/goalActions',{action:'create',goal:text,status:'pending',week_of:new Date().toISOString().split('T')[0]})
+  .then(g=>{
+    btn.disabled=false;btn.textContent='+ Add';
+    if(g.error){showToast('Error: '+g.error,'#ff6b6b');return;}
+    input.value='';
+    const list=document.getElementById('goals-list');
+    const empty=list.querySelector('.empty');if(empty)empty.remove();
+    const div=document.createElement('div');
+    div.className='goal-item';div.dataset.id=g.id;div.dataset.status='pending';
+    div.onclick=()=>toggleGoal(div);
+    div.innerHTML='<div class="goal-check"></div><div class="goal-text">'+esc(text)+'</div>';
+    list.appendChild(div);
+    showToast('Goal added ✓');
+  }).catch(()=>{btn.disabled=false;btn.textContent='+ Add';showToast('Error saving','#ff6b6b');});
+}
+
+// ---- CALENDAR ----
+function toggleSkip(idx,btn){
+  const item=document.querySelector('[data-idx="'+idx+'"].event-item');
+  if(!item)return;
+  if(_skipped[idx]){delete _skipped[idx];item.classList.remove('skipped');btn.textContent='✕ Skip';btn.classList.remove('active');}
+  else{_skipped[idx]=1;item.classList.add('skipped');btn.textContent='↩ Undo';btn.classList.add('active');}
+  localStorage.setItem('sk',JSON.stringify(_skipped));
+}
+
+// ---- EMAILS ----
+function doArchive(idx,btn){
+  const e=_emails[idx];if(!e||!e.id){showToast('No message ID','#ff6b6b');return;}
+  btn.disabled=true;btn.textContent='...';
+  api('/emailActions',{action:'archive',messageId:e.id})
+  .then(r=>{if(r.error)throw new Error(r.error);document.querySelector('[data-idx="'+idx+'"].email-item').classList.add('archived');showToast('Archived ✓');})
+  .catch(err=>{btn.disabled=false;btn.textContent='📥 Archive';showToast(err.message,'#ff6b6b');});
+}
+
+function doUnsub(idx,btn){
+  const e=_emails[idx];if(!e)return;
+  if(!e.unsubscribeUrl){showToast('No unsubscribe link found','#f59e0b');return;}
+  btn.disabled=true;btn.textContent='...';
+  api('/emailActions',{action:'unsubscribe',messageId:e.id,unsubscribeUrl:e.unsubscribeUrl})
+  .then(r=>{if(r.error)throw new Error(r.error);document.querySelector('[data-idx="'+idx+'"].email-item').classList.add('archived');showToast('Unsubscribed ✓');})
+  .catch(err=>{btn.disabled=false;btn.textContent='🚫 Unsub';showToast(err.message,'#ff6b6b');});
+}
+
+function toggleFlag(idx,btn){
+  const item=document.querySelector('[data-idx="'+idx+'"].email-item');if(!item)return;
+  if(_flagged[idx]){delete _flagged[idx];item.classList.remove('flagged');}
+  else{_flagged[idx]=1;item.classList.add('flagged');}
+  localStorage.setItem('fl',JSON.stringify(_flagged));
+}
+
+function toggleSnooze(idx,btn){
+  const item=document.querySelector('[data-idx="'+idx+'"].email-item');if(!item)return;
+  if(_snoozed[idx]){delete _snoozed[idx];item.classList.remove('snoozed');}
+  else{_snoozed[idx]=1;item.classList.add('snoozed');}
+  localStorage.setItem('sn',JSON.stringify(_snoozed));
+}
+
+// ---- DRAFT ----
+function openDraft(idx){
+  const e=_emails[idx];
+  document.getElementById('draft-title').textContent=e.subject||'(No subject)';
+  document.getElementById('draft-sub').textContent='From: '+e.from;
+  const ta=document.getElementById('draft-ta'),st=document.getElementById('draft-status'),cp=document.getElementById('draft-copy');
+  ta.value='';ta.style.display='none';cp.style.display='none';st.style.display='block';st.textContent='Drafting in your voice...';
+  document.getElementById('draft-modal').classList.add('open');
+  api('/draftReply',{from:e.from,subject:e.subject,preview:e.preview})
+  .then(r=>{if(r.error)throw new Error(r.error);ta.value=r.draft;ta.style.display='block';cp.style.display='block';st.style.display='none';})
+  .catch(err=>{st.textContent='Error: '+err.message;});
+}
+
+function closeDraft(){document.getElementById('draft-modal').classList.remove('open');}
+
+function copyDraft(){
+  const ta=document.getElementById('draft-ta');
+  if(navigator.clipboard){navigator.clipboard.writeText(ta.value).then(()=>{const b=document.getElementById('draft-copy');b.textContent='✓ Copied!';setTimeout(()=>b.textContent='📋 Copy to Clipboard',1500);});}
+  else{ta.select();document.execCommand('copy');}
+}
+
+// ---- INIT ----
+loadData();
+</script>
+</body>
+</html>
